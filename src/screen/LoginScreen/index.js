@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth'; // Import Firebase Auth
+import {LoginButton} from 'react-native-fbsdk-next';
 
 const backgroundImage =
   'https://wallpapers.com/images/hd/illuminated-poke-ball-pokemon-iphone-aidw21v1d13ujypw.jpg';
@@ -54,6 +55,20 @@ const LoginScreen = ({navigation}) => {
         <TouchableOpacity style={styles.loginButton} onPress={loginUser}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
+        {/* Facebook Login Button */}
+        <LoginButton
+          onLoginFinished={(error, result) => {
+            if (error) {
+              console.log('Login failed:', error);
+            } else if (result.isCancelled) {
+              console.log('Login was cancelled');
+            } else {
+              console.log('Login was successful:', result);
+              navigation.navigate('UserProfile');
+            }
+          }}
+          onLogoutFinished={() => console.log('User logged out')}
+        />
       </View>
     </ImageBackground>
   );
