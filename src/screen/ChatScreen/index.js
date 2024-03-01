@@ -8,7 +8,6 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
-import {Picker} from '@react-native-picker/picker';
 import {initializeApp, getApps} from 'firebase/app';
 import {
   getFirestore,
@@ -39,45 +38,39 @@ const ChatScreen = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedGroupId, setSelectedGroupId] = useState(null);
-  const [groups, setGroups] = useState([
-    {id: 'Group1', name: 'Group 1'},
-    {id: 'Group2', name: 'Group 2'},
-  ]); // Example groups
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
-    if (selectedGroupId) {
-      const messagesQuery = query(
-        collection(db, `groups/${selectedGroupId}/messages`),
-        orderBy('timestamp', 'desc'),
-      );
-      const unsubscribe = onSnapshot(messagesQuery, querySnapshot => {
-        const fetchedMessages = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          const timestamp = data.timestamp
-            ? new Date(data.timestamp.seconds * 1000)
-            : new Date();
-          return {
-            id: doc.id,
-            text: data.text,
-            email: data.email, // Add email to the message object
-            timestamp,
-          };
-        });
-        setMessages(fetchedMessages);
-        setLoading(false);
+    const messagesQuery = query(
+      collection(db, 'messages'),
+      orderBy('timestamp', 'desc'),
+    );
+    const unsubscribe = onSnapshot(messagesQuery, querySnapshot => {
+      const fetchedMessages = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const timestamp = data.timestamp
+          ? new Date(data.timestamp.seconds * 1000)
+          : new Date();
+        return {
+          id: doc.id,
+          text: data.text,
+          username: data.username,
+          timestamp,
+        };
       });
+      setMessages(fetchedMessages);
+      setLoading(false);
+    });
 
-      return () => unsubscribe();
-    }
-  }, [selectedGroupId]);
+    return () => unsubscribe();
+  }, []);
 
   const sendMessage = async () => {
-    if (newMessage.trim() !== '' && selectedGroupId) {
+    if (newMessage.trim() !== '') {
       try {
-        await addDoc(collection(db, `groups/${selectedGroupId}/messages`), {
+        await addDoc(collection(db, 'messages'), {
           text: newMessage.trim(),
-          email: 'user@example.com', // Placeholder for the user's email
+          username: username || 'Anonymous', // Use username if provided, else 'Anonymous'
           timestamp: serverTimestamp(),
         });
         setNewMessage('');
@@ -89,14 +82,12 @@ const ChatScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Picker
-        selectedValue={selectedGroupId}
-        onValueChange={(itemValue, itemIndex) => setSelectedGroupId(itemValue)}
-        style={styles.picker}>
-        {groups.map(group => (
-          <Picker.Item key={group.id} label={group.name} value={group.id} />
-        ))}
-      </Picker>
+      <TextInput
+        style={styles.usernameInput}
+        value={username}
+        onChangeText={text => setUsername(text)}
+        placeholder="Enter your username"
+      />
       {loading ? (
         <ActivityIndicator size="large" color="blue" />
       ) : (
@@ -104,8 +95,8 @@ const ChatScreen = () => {
           data={messages}
           renderItem={({item}) => (
             <View style={styles.messageContainer}>
+              <Text style={styles.username}>{item.username}</Text>
               <Text style={styles.message}>{item.text}</Text>
-              <Text style={styles.email}>{item.email}</Text>
               <Text style={styles.timestamp}>
                 {item.timestamp.toLocaleString()}
               </Text>
@@ -145,12 +136,13 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  message: {
-    fontSize: 16,
-  },
-  email: {
+  username: {
     fontSize: 14,
     color: 'green',
+    marginBottom: 5,
+  },
+  message: {
+    fontSize: 16,
   },
   timestamp: {
     fontSize: 12,
@@ -180,9 +172,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  picker: {
-    height: 50,
-    width: '100%',
+  usernameInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
   },
 });
 
