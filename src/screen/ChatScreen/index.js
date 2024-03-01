@@ -105,8 +105,7 @@ const ChatScreen = () => {
           renderItem={({item}) => (
             <View style={styles.messageContainer}>
               <Text style={styles.message}>{item.text}</Text>
-              <Text style={styles.email}>{item.email}</Text>{' '}
-              {/* Display the email */}
+              <Text style={styles.email}>{item.email}</Text>
               <Text style={styles.timestamp}>
                 {item.timestamp.toLocaleString()}
               </Text>
